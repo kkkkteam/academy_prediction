@@ -184,3 +184,4 @@ streamlit run app.py --server.port 8502
 ## 聯繫方式
 
 如有問題或建議，請聯繫項目維護者。
+# academy_prediction
