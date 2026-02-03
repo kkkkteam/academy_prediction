@@ -152,7 +152,7 @@ with col1:
             file_name="sample_eclass_data.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             help=get_text(lang, 'download_sample_help'),
-            use_container_width=True
+            width='stretch'
         )
         st.caption(get_text(lang, 'sample_tip'))
     
@@ -170,7 +170,7 @@ with col2:
         st.info(get_text(lang, 'file_uploaded', filename=uploaded_file.name))
         
         # 預測按鈕
-        if st.button(get_text(lang, 'start_prediction'), type="primary", use_container_width=True):
+        if st.button(get_text(lang, 'start_prediction'), type="primary", width='stretch'):
             try:
                 with st.spinner(get_text(lang, 'processing')):
                     # 保存上傳的文件到臨時目錄
@@ -192,7 +192,7 @@ with col2:
                         
                         # 顯示總覽表格
                         st.subheader(get_text(lang, 'overview'))
-                        st.dataframe(results_df, use_container_width=True, height=400)
+                        st.dataframe(results_df, width='stretch', height=400)
                         
                         st.markdown("---")
                         
@@ -272,7 +272,7 @@ with col2:
                                     })
                                 
                                 subject_df = pd.DataFrame(subject_data)
-                                st.dataframe(subject_df, use_container_width=True, hide_index=True)
+                                st.dataframe(subject_df, width='stretch', hide_index=True)
                             
                             if subjects_without_data:
                                 st.markdown(f"#### {get_text(lang, 'subjects_without_data')}")
