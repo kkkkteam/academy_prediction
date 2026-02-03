@@ -31,17 +31,46 @@ class SubjectBasedPredictor:
             # 嘗試使用標準格式（有列名）
             try:
                 df = pd.read_excel(file_path)
-                # 檢查是否有English_Name或Student_ID列
-                if 'English_Name' in df.columns or 'English Name' in df.columns:
+                # 檢查是否有UserLogin列（學生ID）
+                if 'UserLogin' in df.columns:
+                    # 標準格式，UserLogin是學生ID
+                    # 嘗試找到English Name列（可能在第二列或其他列）
+                    english_name_col = None
+                    for col in df.columns:
+                        if col.lower() in ['english_name', 'english name', 'name']:
+                            english_name_col = col
+                            break
+                    
+                    # 如果沒有English Name列，使用UserLogin作為顯示名稱
+                    if english_name_col:
+                        df['English_Name'] = df[english_name_col]
+                    else:
+                        df['English_Name'] = df['UserLogin']
+                    
+                    df['Student_ID'] = df['UserLogin']  # UserLogin是學生ID
+                    
+                    # 處理 "--" 表示未修讀
+                    for col in df.columns:
+                        if col not in ['UserLogin', 'English_Name', 'Student_ID']:
+                            df[col] = df[col].replace('--', None)
+                            df[col] = df[col].replace('', None)
+                    
+                    # 按科目合併Term成績
+                    df_merged = self._merge_term_scores(df)
+                    return df_merged
+                # 檢查是否有English_Name或Student_ID列（舊格式兼容）
+                elif 'English_Name' in df.columns or 'English Name' in df.columns:
                     # 標準格式，需要按科目合併Term
                     if 'English_Name' not in df.columns:
                         df = df.rename(columns={'English Name': 'English_Name'})
                     if 'Student_ID' not in df.columns:
                         df['Student_ID'] = df['English_Name']
+                    # 添加UserLogin列（使用Student_ID）
+                    df['UserLogin'] = df['Student_ID']
                     
                     # 處理 "--" 表示未修讀
                     for col in df.columns:
-                        if col not in ['English_Name', 'Student_ID']:
+                        if col not in ['English_Name', 'Student_ID', 'UserLogin']:
                             df[col] = df[col].replace('--', None)
                             df[col] = df[col].replace('', None)
                     
@@ -91,15 +120,31 @@ class SubjectBasedPredictor:
             for row_idx in range(start_data_row, len(df)):
                 row = df.iloc[row_idx]
                 
-                # 獲取 English name（第一列）
-                english_name = str(row.iloc[0]) if pd.notna(row.iloc[0]) else None
+                # 獲取 UserLogin（第一列，這是學生ID）
+                userlogin = str(row.iloc[0]) if pd.notna(row.iloc[0]) else None
                 
-                if not english_name or english_name in ['UserLogin', '--', '']:
+                if not userlogin or userlogin in ['UserLogin', '--', '']:
                     continue
+                
+                # 嘗試獲取 English name（可能在第二列或其他列）
+                english_name = None
+                if len(row) > 1:
+                    # 檢查第二列是否可能是English name
+                    second_col = str(row.iloc[1]) if pd.notna(row.iloc[1]) else None
+                    # 如果第二列不是數字且不是Class/No.等標題，可能是English name
+                    if second_col and second_col not in ['Class', 'No.', '--']:
+                        try:
+                            float(second_col)  # 如果是數字，不是English name
+                        except:
+                            english_name = second_col
+                
+                # 如果沒有找到English name，使用UserLogin作為顯示名稱
+                if not english_name:
+                    english_name = userlogin
                 
                 record = {
                     'english_name': english_name,
-                    'student_id': english_name  # 使用 English name 作為 ID
+                    'student_id': userlogin  # 使用 UserLogin 作為學生ID（用於匹配）
                 }
                 
                 # 提取各科目成績（按科目匯總，不按Term分開）
@@ -264,19 +309,24 @@ class SubjectBasedPredictor:
             raise ValueError("無法從 eClass 數據中提取信息")
         
         # 標準化列名
-        if 'English_Name' in eclass_df.columns and 'english_name' not in eclass_df.columns:
-            eclass_df['english_name'] = eclass_df['English_Name']
-        if 'English Name' in eclass_df.columns and 'english_name' not in eclass_df.columns:
-            eclass_df['english_name'] = eclass_df['English Name']
-        if 'english_name' not in eclass_df.columns:
-            # 使用第一列作為english_name
-            first_col = eclass_df.columns[0]
-            eclass_df['english_name'] = eclass_df[first_col]
-        
-        if 'Student_ID' in eclass_df.columns and 'student_id' not in eclass_df.columns:
+        # 優先使用UserLogin作為學生ID
+        if 'UserLogin' in eclass_df.columns:
+            eclass_df['student_id'] = eclass_df['UserLogin']
+        elif 'Student_ID' in eclass_df.columns:
             eclass_df['student_id'] = eclass_df['Student_ID']
-        if 'student_id' not in eclass_df.columns:
-            eclass_df['student_id'] = eclass_df['english_name']
+        elif 'student_id' not in eclass_df.columns:
+            # 使用第一列作為student_id
+            first_col = eclass_df.columns[0]
+            eclass_df['student_id'] = eclass_df[first_col]
+        
+        # 獲取English Name（用於顯示）
+        if 'English_Name' in eclass_df.columns:
+            eclass_df['english_name'] = eclass_df['English_Name']
+        elif 'English Name' in eclass_df.columns:
+            eclass_df['english_name'] = eclass_df['English Name']
+        elif 'english_name' not in eclass_df.columns:
+            # 如果沒有English Name，使用student_id作為顯示名稱
+            eclass_df['english_name'] = eclass_df['student_id']
         
         # 載入整體模型（用於備用預測）
         try:

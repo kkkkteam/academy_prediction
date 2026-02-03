@@ -6,43 +6,75 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
-# 創建示例數據 - 模擬真實的 eClass 數據格式
-# 第一列是學生ID，後續列是各科目的成績
+# 設置隨機種子以便結果可重現（可選）
+np.random.seed(42)
 
-sample_data = {
-    'Student_ID': [
-        'STU001', 'STU002', 'STU003', 'STU004', 'STU005',
-        'STU006', 'STU007', 'STU008', 'STU009', 'STU010'
-    ],
-    'English_Term1': [75, 82, 68, 90, 73, 85, 78, 72, 88, 80],
-    'English_Term2': [78, 85, 70, 92, 76, 87, 81, 75, 90, 83],
-    'English_Term3': [80, 88, 72, 94, 78, 89, 84, 77, 92, 85],
-    'Chinese_Term1': [80, 78, 72, 85, 76, 82, 79, 74, 86, 81],
-    'Chinese_Term2': [82, 80, 74, 87, 78, 84, 81, 76, 88, 83],
-    'Chinese_Term3': [85, 83, 77, 90, 81, 87, 84, 79, 91, 86],
-    'Mathematics_Term1': [88, 85, 70, 92, 80, 90, 83, 75, 93, 87],
-    'Mathematics_Term2': [90, 87, 72, 94, 82, 92, 85, 77, 95, 89],
-    'Mathematics_Term3': [92, 89, 74, 96, 84, 94, 87, 79, 97, 91],
-    'Science_Term1': [82, 79, 75, 88, 77, 85, 80, 73, 89, 82],
-    'Science_Term2': [84, 81, 77, 90, 79, 87, 82, 75, 91, 84],
-    'Science_Term3': [86, 83, 79, 92, 81, 89, 84, 77, 93, 86],
-    'History_Term1': [78, 81, 68, 85, 74, 83, 77, 71, 87, 79],
-    'History_Term2': [80, 83, 70, 87, 76, 85, 79, 73, 89, 81],
-    'History_Term3': [82, 85, 72, 89, 78, 87, 81, 75, 91, 83],
-    'Geography_Term1': [80, 83, 72, 87, 79, 86, 79, 73, 88, 81],
-    'Geography_Term2': [82, 85, 74, 89, 81, 88, 81, 75, 90, 83],
-    'Geography_Term3': [84, 87, 76, 91, 83, 90, 83, 77, 92, 85],
-    'Physics_Term1': [85, 80, 73, 90, 78, 88, 82, 76, 91, 84],
-    'Physics_Term2': [87, 82, 75, 92, 80, 90, 84, 78, 93, 86],
-    'Physics_Term3': [89, 84, 77, 94, 82, 92, 86, 80, 95, 88],
-    'Chemistry_Term1': [83, 77, 70, 88, 75, 86, 79, 73, 89, 82],
-    'Chemistry_Term2': [85, 79, 72, 90, 77, 88, 81, 75, 91, 84],
-    'Chemistry_Term3': [87, 81, 74, 92, 79, 90, 83, 77, 93, 86],
-    'Biology_Term1': [81, 79, 74, 86, 76, 84, 78, 72, 87, 80],
-    'Biology_Term2': [83, 81, 76, 88, 78, 86, 80, 74, 89, 82],
-    'Biology_Term3': [85, 83, 78, 90, 80, 88, 82, 76, 91, 84],
-    'Average_Score': [82.3, 82.7, 73.5, 89.8, 78.6, 87.2, 81.4, 75.2, 90.6, 83.8]
-}
+# 學生列表
+students = [
+    'STU001', 'STU002', 'STU003', 'STU004', 'STU005',
+    'STU006', 'STU007', 'STU008', 'STU009', 'STU010'
+]
+
+# 科目列表
+subjects = [
+    'English', 'Chinese', 'Mathematics', 'Science', 'History',
+    'Geography', 'Physics', 'Chemistry', 'Biology'
+]
+
+# 為每個學生生成不同的能力水平（基礎分數，範圍 50-95）
+student_base_scores = {}
+for student in students:
+    # 每個學生有一個總體能力水平
+    base_ability = np.random.normal(75, 12)  # 平均75，標準差12
+    base_ability = np.clip(base_ability, 20, 95)  # 限制在50-95之間
+    student_base_scores[student] = base_ability
+
+# 為每個科目生成難度係數（某些科目可能較難或較易）
+subject_difficulty = {}
+for subject in subjects:
+    # 科目難度係數，範圍 0.85-1.15
+    difficulty = np.random.normal(1.0, 0.1)
+    difficulty = np.clip(difficulty, 0.85, 1.15)
+    subject_difficulty[subject] = difficulty
+
+# 創建數據字典
+# 第一列是 UserLogin（學生ID），用於匹配 HKDSE/IB 結果
+sample_data = {'UserLogin': students}
+
+# 為每個科目生成3個Term的成績
+for subject in subjects:
+    for term in [1, 2, 3]:
+        scores = []
+        for student in students:
+            # 基礎分數 = 學生能力 × 科目難度
+            base_score = student_base_scores[student] * subject_difficulty[subject]
+            
+            # 添加隨機波動
+            # Term1: 較大波動（適應期）
+            # Term2: 中等波動（穩定期）
+            # Term3: 較小波動（熟練期）
+            if term == 1:
+                noise = np.random.normal(0, 8)  # 標準差8
+            elif term == 2:
+                noise = np.random.normal(0, 6)  # 標準差6
+            else:  # term == 3
+                noise = np.random.normal(0, 5)  # 標準差5
+            
+            # 添加科目特異性波動（某些學生在某些科目表現更好/更差）
+            subject_specific = np.random.normal(0, 5)
+            
+            # 計算最終分數
+            final_score = base_score + noise + subject_specific
+            
+            # 限制在合理範圍內（0-100）
+            final_score = np.clip(final_score, 0, 100)
+            
+            # 四捨五入到整數
+            scores.append(round(final_score))
+        
+        # 添加到數據字典
+        col_name = f'{subject}_Term{term}'
+        sample_data[col_name] = scores
 
 df = pd.DataFrame(sample_data)
 

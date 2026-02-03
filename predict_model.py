@@ -69,11 +69,22 @@ class DataPreprocessor:
                 
                 # 構建標準化的數據框
                 records = []
+                # 找到UserLogin行（標題行）
+                userlogin_row = None
                 for idx, row in df.iterrows():
-                    if idx == 0:  # 跳過標題行
+                    if str(row.iloc[0]).strip() == 'UserLogin':
+                        userlogin_row = idx
+                        break
+                
+                # 從UserLogin行之後開始處理數據
+                start_row = userlogin_row + 1 if userlogin_row is not None else 1
+                
+                for idx, row in df.iterrows():
+                    if idx < start_row:  # 跳過標題行和UserLogin行
                         continue
+                    # UserLogin是第一列，這是學生ID
                     student_id = str(row.iloc[0]) if pd.notna(row.iloc[0]) else None
-                    if student_id and student_id not in ['UserLogin', '']:
+                    if student_id and student_id not in ['UserLogin', 'NysM', '']:
                         record = {'student_id': student_id}
                         # 提取成績數據
                         for col_idx in range(1, min(len(row), 40)):
@@ -280,22 +291,39 @@ class PredictionModel:
         target_data['student_id'] = target_data['student_id'].astype(str).str.strip()
         
         # 嘗試多種匹配方式
-        # 方法1: 直接匹配
+        # 方法1: 直接匹配（UserLogin與Code直接匹配）
         merged = eclass_features.merge(
             target_data[['student_id', target_col]], 
             on='student_id', 
             how='inner'
         )
         
-        # 方法2: 如果直接匹配失敗，嘗試使用索引匹配（基於數據順序）
-        if merged.empty and len(eclass_features) == len(target_data):
-            print("  警告：學生ID無法直接匹配，嘗試使用順序匹配...")
-            eclass_features_reset = eclass_features.reset_index(drop=True)
-            target_data_reset = target_data.reset_index(drop=True)
-            merged = eclass_features_reset.copy()
-            merged[target_col] = target_data_reset[target_col].values
+        # 方法2: 如果直接匹配失敗，嘗試將HKDSE的Code轉換為字符串後匹配
+        if merged.empty:
+            print("  嘗試將HKDSE Code轉換為字符串後匹配...")
+            target_data_str = target_data.copy()
+            target_data_str['student_id'] = target_data_str['student_id'].astype(str)
+            merged = eclass_features.merge(
+                target_data_str[['student_id', target_col]], 
+                on='student_id', 
+                how='inner'
+            )
         
-        # 方法3: 如果還是失敗，嘗試使用統計特徵匹配
+        # 方法3: 如果還是失敗，嘗試使用索引匹配（基於數據順序）
+        if merged.empty and len(eclass_features) > 0 and len(target_data) > 0:
+            print("  警告：學生ID無法直接匹配，嘗試使用順序匹配...")
+            # 按UserLogin排序（保持原始順序）
+            eclass_sorted = eclass_features.sort_values('student_id').reset_index(drop=True)
+            # 按Code排序
+            target_sorted = target_data.sort_values('student_id').reset_index(drop=True)
+            
+            # 匹配較少的數量
+            min_len = min(len(eclass_sorted), len(target_sorted))
+            merged = eclass_sorted.iloc[:min_len].copy()
+            merged[target_col] = target_sorted[target_col].iloc[:min_len].values
+            print(f"  使用順序匹配，成功匹配 {len(merged)} 個樣本")
+        
+        # 方法4: 如果還是失敗，嘗試使用統計特徵匹配
         if merged.empty:
             print("  警告：學生ID無法直接匹配，嘗試使用統計特徵匹配...")
             # 如果eClass和目標數據數量相近，嘗試按成績分布匹配
