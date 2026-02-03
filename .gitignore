@@ -47,6 +47,10 @@ analysis_output/
 *.xls
 *.csv
 
+# But allow sample files
+!sample_files/*.xlsx
+!sample_files/*.xls
+
 # Temporary files
 *.tmp
 *.log
