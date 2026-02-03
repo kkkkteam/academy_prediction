@@ -25,8 +25,8 @@ subjects = [
 student_base_scores = {}
 for student in students:
     # 每個學生有一個總體能力水平
-    base_ability = np.random.normal(75, 12)  # 平均75，標準差12
-    base_ability = np.clip(base_ability, 20, 95)  # 限制在50-95之間
+    base_ability = np.random.normal(70, 20)  # 平均70，標準差20
+    base_ability = np.clip(base_ability, 20, 95)  # 限制在20-95之間
     student_base_scores[student] = base_ability
 
 # 為每個科目生成難度係數（某些科目可能較難或較易）
