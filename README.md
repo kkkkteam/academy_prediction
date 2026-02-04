@@ -8,6 +8,7 @@
 - 🤖 **機器學習模型**：使用 XGBoost 進行預測
 - 🎨 **Web 界面**：友好的 Streamlit Web UI
 - 📈 **預測結果**：提供詳細的預測結果和等級解釋
+- 🔧 **管理界面**：管理員可以持續上傳數據並重新訓練模型
 
 ## 安裝步驟
 
@@ -64,11 +65,32 @@ python train_model.py --target both --data-dir ./Data
 
 ### 步驟 2：啟動 Web UI
 
+**用戶界面（預測功能）：**
 ```bash
 streamlit run app.py
+# 或使用啟動腳本
+./start_ui.sh
 ```
 
 瀏覽器會自動打開，或者訪問 `http://localhost:8501`
+
+**管理員界面（數據管理和模型訓練）：**
+```bash
+streamlit run admin.py --server.port 8502
+# 或使用啟動腳本
+./start_admin.sh
+```
+
+訪問 `http://localhost:8502` 使用管理功能
+
+**首次使用前請設置管理員密碼：**
+```bash
+python set_admin_password.py
+```
+
+**默認密碼**：`admin123`（**強烈建議立即更改**）
+
+詳細使用指南請參考：[ADMIN_GUIDE.md](ADMIN_GUIDE.md)
 
 ### 步驟 3：使用 Web UI 進行預測
 
@@ -115,6 +137,38 @@ python analysis.py --input ./Data
 python analysis.py --input ./Data/eClass\ Data/2017-2018\ S3\ YEARLY_converted.xlsx
 ```
 
+## 管理員界面
+
+管理員界面 (`admin.py`) 提供了完整的數據管理和模型訓練功能：
+
+### 主要功能
+
+1. **🔐 安全登錄**：需要管理員密碼才能訪問
+2. **📤 數據上傳**：持續上傳新的訓練數據（eClass、HKDSE、IB）
+3. **🚀 模型訓練**：使用最新數據重新訓練模型
+4. **📈 性能監控**：查看模型性能指標和訓練歷史
+5. **🗂️ 數據管理**：管理已上傳的數據文件
+
+### 使用說明
+
+詳細的使用指南請參考：[ADMIN_GUIDE.md](ADMIN_GUIDE.md)
+
+### 快速開始
+
+```bash
+# 1. 首次使用前設置管理員密碼（推薦）
+python set_admin_password.py
+
+# 2. 啟動管理界面
+./start_admin.sh
+# 或
+streamlit run admin.py --server.port 8502
+
+# 3. 在瀏覽器中登錄（默認密碼：admin123）
+```
+
+**注意**：首次使用時默認密碼為 `admin123`，請立即更改！
+
 ## 項目結構
 
 ```
@@ -122,9 +176,13 @@ Program/
 ├── analysis.py          # 數據分析工具
 ├── predict_model.py     # 預測模型核心代碼
 ├── train_model.py       # 模型訓練腳本
-├── app.py               # Streamlit Web UI
+├── app.py               # Streamlit Web UI（用戶界面）
+├── admin.py             # Streamlit 管理界面
+├── start_ui.sh          # 啟動用戶界面腳本
+├── start_admin.sh       # 啟動管理界面腳本
 ├── requirements.txt     # Python 依賴
 ├── README.md           # 本文件
+├── ADMIN_GUIDE.md      # 管理界面使用指南
 ├── Data/               # 數據目錄
 │   ├── eClass Data/
 │   ├── HKDSE/
@@ -134,7 +192,9 @@ Program/
 │   └── README.md       # 示例文件說明
 └── models/             # 訓練好的模型（自動生成）
     ├── hkdse_model.pkl
-    └── ib_model.pkl
+    ├── ib_model.pkl
+    ├── hkdse_model_metrics.json
+    └── ib_model_metrics.json
 ```
 
 ## 技術棧

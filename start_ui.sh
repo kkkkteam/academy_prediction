@@ -26,9 +26,13 @@ if [ ! -f "models/hkdse_model.pkl" ] && [ ! -f "models/ib_model.pkl" ]; then
     fi
 fi
 
+# 設置環境變量來減少關閉時的警告
+export PYTHONUNBUFFERED=1
+
 # 啟動 Streamlit
 echo ""
 echo "🌐 正在啟動 Web UI..."
 echo "   瀏覽器將自動打開，或訪問 http://localhost:8501"
 echo ""
+# 注意：關閉時的 "Event loop is closed" 警告是無害的，可以忽略
 streamlit run app.py

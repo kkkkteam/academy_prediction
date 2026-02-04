@@ -18,6 +18,30 @@ import os
 from predict_model import PredictionModel
 from predict_by_subject import SubjectBasedPredictor, format_prediction_results
 from language import get_text
+import sys
+import warnings
+import atexit
+
+# 抑制 Streamlit 關閉時的無害警告
+warnings.filterwarnings("ignore", category=RuntimeWarning)
+
+# 處理關閉時的 Event loop 錯誤
+def suppress_event_loop_error():
+    """抑制關閉時的 Event loop 錯誤"""
+    import sys
+    
+    def exception_handler(exc_type, exc_value, exc_traceback):
+        if exc_type is RuntimeError and "Event loop is closed" in str(exc_value):
+            # 忽略關閉時的無害錯誤
+            return
+        # 其他錯誤正常處理
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+    
+    # 設置異常處理器
+    sys.excepthook = exception_handler
+
+# 註冊清理函數
+atexit.register(suppress_event_loop_error)
 
 # 初始化session state
 if 'language' not in st.session_state:

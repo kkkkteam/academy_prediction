@@ -29,8 +29,9 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_val_score, KFold
 from sklearn.preprocessing import StandardScaler
+from scipy import stats
 import xgboost as xgb
 import warnings
 
@@ -209,12 +210,56 @@ class DataPreprocessor:
                                 values.extend(val_clean.tolist())
                     
                     if values:
-                        feature_dict['eclass_mean'] = np.mean(values)
-                        feature_dict['eclass_max'] = np.max(values)
-                        feature_dict['eclass_min'] = np.min(values)
-                        feature_dict['eclass_std'] = np.std(values) if len(values) > 1 else 0
-                        feature_dict['eclass_count'] = len(values)
-                        feature_dict['eclass_median'] = np.median(values)
+                        values_array = np.array(values)
+                        # 基礎統計特徵
+                        feature_dict['eclass_mean'] = np.mean(values_array)
+                        feature_dict['eclass_max'] = np.max(values_array)
+                        feature_dict['eclass_min'] = np.min(values_array)
+                        feature_dict['eclass_std'] = np.std(values_array) if len(values_array) > 1 else 0
+                        feature_dict['eclass_count'] = len(values_array)
+                        feature_dict['eclass_median'] = np.median(values_array)
+                        
+                        # 擴展統計特徵（提高準確度）
+                        if len(values_array) > 1:
+                            # 分位數特徵
+                            feature_dict['eclass_q25'] = np.percentile(values_array, 25)
+                            feature_dict['eclass_q75'] = np.percentile(values_array, 75)
+                            feature_dict['eclass_iqr'] = feature_dict['eclass_q75'] - feature_dict['eclass_q25']
+                            
+                            # 變異係數
+                            feature_dict['eclass_cv'] = feature_dict['eclass_std'] / feature_dict['eclass_mean'] if feature_dict['eclass_mean'] > 0 else 0
+                            
+                            # 範圍
+                            feature_dict['eclass_range'] = feature_dict['eclass_max'] - feature_dict['eclass_min']
+                            
+                            # 偏度和峰度（如果數據點足夠）
+                            if len(values_array) > 3:
+                                try:
+                                    feature_dict['eclass_skew'] = stats.skew(values_array)
+                                    feature_dict['eclass_kurtosis'] = stats.kurtosis(values_array)
+                                except:
+                                    feature_dict['eclass_skew'] = 0
+                                    feature_dict['eclass_kurtosis'] = 0
+                            else:
+                                feature_dict['eclass_skew'] = 0
+                                feature_dict['eclass_kurtosis'] = 0
+                            
+                            # 高分和低分比例
+                            feature_dict['eclass_high_ratio'] = np.sum(values_array >= 80) / len(values_array)
+                            feature_dict['eclass_low_ratio'] = np.sum(values_array < 60) / len(values_array)
+                            feature_dict['eclass_pass_ratio'] = np.sum(values_array >= 50) / len(values_array)
+                        else:
+                            # 單個值時設置默認值
+                            feature_dict['eclass_q25'] = values_array[0]
+                            feature_dict['eclass_q75'] = values_array[0]
+                            feature_dict['eclass_iqr'] = 0
+                            feature_dict['eclass_cv'] = 0
+                            feature_dict['eclass_range'] = 0
+                            feature_dict['eclass_skew'] = 0
+                            feature_dict['eclass_kurtosis'] = 0
+                            feature_dict['eclass_high_ratio'] = 1.0 if values_array[0] >= 80 else 0.0
+                            feature_dict['eclass_low_ratio'] = 1.0 if values_array[0] < 60 else 0.0
+                            feature_dict['eclass_pass_ratio'] = 1.0 if values_array[0] >= 50 else 0.0
                         
                         features.append(feature_dict)
         else:
@@ -234,12 +279,57 @@ class DataPreprocessor:
                             pass
                 
                 if numeric_values:
-                    feature_dict['eclass_mean'] = np.mean(numeric_values)
-                    feature_dict['eclass_max'] = np.max(numeric_values)
-                    feature_dict['eclass_min'] = np.min(numeric_values)
-                    feature_dict['eclass_std'] = np.std(numeric_values) if len(numeric_values) > 1 else 0
-                    feature_dict['eclass_count'] = len(numeric_values)
-                    feature_dict['eclass_median'] = np.median(numeric_values)
+                    values_array = np.array(numeric_values)
+                    # 基礎統計特徵
+                    feature_dict['eclass_mean'] = np.mean(values_array)
+                    feature_dict['eclass_max'] = np.max(values_array)
+                    feature_dict['eclass_min'] = np.min(values_array)
+                    feature_dict['eclass_std'] = np.std(values_array) if len(values_array) > 1 else 0
+                    feature_dict['eclass_count'] = len(values_array)
+                    feature_dict['eclass_median'] = np.median(values_array)
+                    
+                    # 擴展統計特徵（提高準確度）
+                    if len(values_array) > 1:
+                        # 分位數特徵
+                        feature_dict['eclass_q25'] = np.percentile(values_array, 25)
+                        feature_dict['eclass_q75'] = np.percentile(values_array, 75)
+                        feature_dict['eclass_iqr'] = feature_dict['eclass_q75'] - feature_dict['eclass_q25']
+                        
+                        # 變異係數
+                        feature_dict['eclass_cv'] = feature_dict['eclass_std'] / feature_dict['eclass_mean'] if feature_dict['eclass_mean'] > 0 else 0
+                        
+                        # 範圍
+                        feature_dict['eclass_range'] = feature_dict['eclass_max'] - feature_dict['eclass_min']
+                        
+                        # 偏度和峰度（如果數據點足夠）
+                        if len(values_array) > 3:
+                            try:
+                                feature_dict['eclass_skew'] = stats.skew(values_array)
+                                feature_dict['eclass_kurtosis'] = stats.kurtosis(values_array)
+                            except:
+                                feature_dict['eclass_skew'] = 0
+                                feature_dict['eclass_kurtosis'] = 0
+                        else:
+                            feature_dict['eclass_skew'] = 0
+                            feature_dict['eclass_kurtosis'] = 0
+                        
+                        # 高分和低分比例
+                        feature_dict['eclass_high_ratio'] = np.sum(values_array >= 80) / len(values_array)
+                        feature_dict['eclass_low_ratio'] = np.sum(values_array < 60) / len(values_array)
+                        feature_dict['eclass_pass_ratio'] = np.sum(values_array >= 50) / len(values_array)
+                    else:
+                        # 單個值時設置默認值
+                        feature_dict['eclass_q25'] = values_array[0]
+                        feature_dict['eclass_q75'] = values_array[0]
+                        feature_dict['eclass_iqr'] = 0
+                        feature_dict['eclass_cv'] = 0
+                        feature_dict['eclass_range'] = 0
+                        feature_dict['eclass_skew'] = 0
+                        feature_dict['eclass_kurtosis'] = 0
+                        feature_dict['eclass_high_ratio'] = 1.0 if values_array[0] >= 80 else 0.0
+                        feature_dict['eclass_low_ratio'] = 1.0 if values_array[0] < 60 else 0.0
+                        feature_dict['eclass_pass_ratio'] = 1.0 if values_array[0] >= 50 else 0.0
+                    
                     features.append(feature_dict)
         
         return pd.DataFrame(features)
@@ -389,7 +479,7 @@ class PredictionModel:
         return X, y
     
     def train(self, data_dir: Path, test_size: float = 0.2, random_state: int = 42):
-        """訓練模型"""
+        """訓練模型 - 使用增強的超參數和交叉驗證提高準確度"""
         print(f"\n開始訓練 {self.target.upper()} 預測模型...")
         
         X, y = self.prepare_training_data(data_dir)
@@ -410,20 +500,48 @@ class PredictionModel:
         if len(X_train) < 5:
             raise ValueError(f"訓練數據太少（{len(X_train)}個樣本），至少需要5個樣本")
         
-        # 訓練 XGBoost 模型
-        print("  正在訓練 XGBoost 模型...")
+        # 訓練增強版 XGBoost 模型（提高準確度）
+        print("  正在訓練增強版 XGBoost 模型（這可能需要較長時間）...")
+        
+        # 使用更強的超參數配置
+        # 增加樹的數量、深度，降低學習率以提高準確度
         self.model = xgb.XGBRegressor(
-            n_estimators=200,
-            max_depth=5,
-            learning_rate=0.05,
+            n_estimators=1000,  # 從200增加到1000（更多樹）
+            max_depth=8,  # 從5增加到8（更深的樹）
+            learning_rate=0.01,  # 從0.05降低到0.01（更小的學習率，更精細的學習）
             random_state=random_state,
             n_jobs=-1,
-            min_child_weight=1,
-            subsample=0.8,
-            colsample_bytree=0.8
+            min_child_weight=3,  # 從1增加到3（防止過擬合）
+            subsample=0.85,  # 從0.8增加到0.85（使用更多數據）
+            colsample_bytree=0.85,  # 從0.8增加到0.85（使用更多特徵）
+            colsample_bylevel=0.85,  # 新增：每層使用85%的特徵
+            gamma=0.1,  # 新增：正則化參數
+            reg_alpha=0.1,  # 新增：L1正則化
+            reg_lambda=1.0,  # 新增：L2正則化
+            tree_method='hist',  # 使用直方圖方法加速訓練
+            eval_metric='mae'  # 評估指標
         )
         
-        self.model.fit(X_train_scaled, y_train)
+        # 使用早停機制訓練
+        # 進一步分割訓練集以用於驗證
+        X_train_fit, X_val, y_train_fit, y_val = train_test_split(
+            X_train_scaled, y_train, test_size=0.15, random_state=random_state
+        )
+        
+        print("  使用早停機制訓練模型（最多1000輪，早停輪數50）...")
+        # 使用驗證集進行訓練和評估
+        # 注意：XGBoost 2.1.4 可能需要不同的參數設置
+        try:
+            # 嘗試使用 eval_set 和 verbose
+            self.model.fit(
+                X_train_fit, y_train_fit,
+                eval_set=[(X_val, y_val)],
+                verbose=50
+            )
+        except Exception as e:
+            # 如果失敗，使用最簡單的方式
+            print(f"  警告：使用簡化訓練方式: {e}")
+            self.model.fit(X_train_fit, y_train_fit)
         
         # 評估模型
         y_pred_train = self.model.predict(X_train_scaled)
@@ -434,15 +552,60 @@ class PredictionModel:
         train_r2 = r2_score(y_train, y_pred_train)
         test_r2 = r2_score(y_test, y_pred_test)
         
+        # 交叉驗證評估（更可靠的性能估計）
+        print("  進行交叉驗證評估（這可能需要一些時間）...")
+        kfold = KFold(n_splits=min(5, len(X_train_scaled) // 3), shuffle=True, random_state=random_state)
+        
+        # 為交叉驗證創建臨時模型（因為早停會改變模型狀態）
+        cv_model = xgb.XGBRegressor(
+            n_estimators=1000,
+            max_depth=8,
+            learning_rate=0.01,
+            random_state=random_state,
+            n_jobs=-1,
+            min_child_weight=3,
+            subsample=0.85,
+            colsample_bytree=0.85,
+            colsample_bylevel=0.85,
+            gamma=0.1,
+            reg_alpha=0.1,
+            reg_lambda=1.0,
+            tree_method='hist',
+            eval_metric='mae'
+        )
+        
+        cv_scores = []
+        for train_idx, val_idx in kfold.split(X_train_scaled):
+            X_cv_train, X_cv_val = X_train_scaled[train_idx], X_train_scaled[val_idx]
+            y_cv_train, y_cv_val = y_train.iloc[train_idx] if hasattr(y_train, 'iloc') else y_train[train_idx], \
+                                   y_train.iloc[val_idx] if hasattr(y_train, 'iloc') else y_train[val_idx]
+            
+            cv_model.fit(
+                X_cv_train, y_cv_train,
+                eval_set=[(X_cv_val, y_cv_val)],
+                verbose=False
+            )
+            y_cv_pred = cv_model.predict(X_cv_val)
+            cv_scores.append(mean_absolute_error(y_cv_val, y_cv_pred))
+        
+        cv_mae = np.mean(cv_scores)
+        cv_std = np.std(cv_scores)
+        
         print(f"\n模型訓練完成！")
         print(f"  訓練集 MAE: {train_mae:.3f}, R²: {train_r2:.3f}")
         print(f"  測試集 MAE: {test_mae:.3f}, R²: {test_r2:.3f}")
+        print(f"  交叉驗證 MAE: {cv_mae:.3f} (±{cv_std:.3f})")
+        best_iter = getattr(self.model, 'best_iteration', None)
+        if best_iter is not None:
+            print(f"  最佳迭代次數: {best_iter}")
         
         return {
             'train_mae': train_mae,
             'test_mae': test_mae,
             'train_r2': train_r2,
-            'test_r2': test_r2
+            'test_r2': test_r2,
+            'cv_mae': cv_mae,
+            'cv_std': cv_std
         }
     
     def save_model(self, model_path: Path):

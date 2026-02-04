@@ -63,3 +63,6 @@ Thumbs.db
 
 # Streamlit
 .streamlit/
+
+# Admin password file (sensitive)
+.admin_password
