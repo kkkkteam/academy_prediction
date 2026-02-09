@@ -36,9 +36,10 @@ env/
 # Jupyter Notebook
 .ipynb_checkpoints
 
-# Model files (too large for git)
-models/*.pkl
+# Model files (ignore .pkl elsewhere)
 *.pkl
+# 部署用：允許已訓練的模型放進 repo，讓 Streamlit Cloud 能載入
+!models/*.pkl
 
 # Data files (sensitive/too large)
 Data/
