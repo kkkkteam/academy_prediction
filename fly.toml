@@ -1,0 +1,23 @@
+# fly.toml app configuration file generated for academy-prediction-inflow-uat on 2026-02-10T13:45:03Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'academy-prediction-inflow-uat'
+primary_region = 'yyz'
+
+[build]
+
+[http_service]
+  internal_port = 8125
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 256
