@@ -15,6 +15,7 @@ import pandas as pd
 from pathlib import Path
 import tempfile
 import os
+import io
 from predict_model import PredictionModel
 from predict_by_subject import SubjectBasedPredictor, format_prediction_results
 from language import get_text
@@ -154,12 +155,41 @@ def _prediction_page():
         st.subheader(get_text(lang, 'prediction_results'))
         if uploaded_file is not None:
             st.info(get_text(lang, 'file_uploaded', filename=uploaded_file.name))
+            # 上傳數據檢查與預覽
+            try:
+                data_bytes = uploaded_file.getvalue()
+                ext = uploaded_file.name.split('.')[-1].lower()
+                if ext in ['xlsx', 'xls']:
+                    df_full = pd.read_excel(io.BytesIO(data_bytes))
+                else:
+                    df_full = pd.read_csv(io.BytesIO(data_bytes))
+                st.markdown(f"### {get_text(lang, 'data_check_title')}")
+                st.caption(get_text(lang, 'data_check_preview'))
+                st.dataframe(df_full.head(5), use_container_width=True)
+                st.caption(get_text(lang, 'data_check_shape',
+                                    rows=df_full.shape[0], cols=df_full.shape[1]))
+                num_cols = df_full.select_dtypes(include='number').columns
+                if len(num_cols) > 0:
+                    invalid_mask = (df_full[num_cols] < 0) | (df_full[num_cols] > 100)
+                    invalid_count = int(invalid_mask.sum().sum())
+                    total = int(df_full[num_cols].size)
+                    if invalid_count > 0:
+                        st.warning(get_text(lang, 'data_check_out_of_range',
+                                            invalid=invalid_count, total=total))
+                    else:
+                        st.success(get_text(lang, 'data_check_ok'))
+                else:
+                    st.info(get_text(lang, 'data_check_no_numeric'))
+            except Exception as e:
+                data_bytes = uploaded_file.getvalue()
+                st.info(get_text(lang, 'data_check_error', error=str(e)))
+
             if st.button(get_text(lang, 'start_prediction'), type="primary", width='stretch'):
                 try:
                     with st.spinner(get_text(lang, 'processing')):
                         # 保存上傳的文件到臨時目錄
                         with tempfile.NamedTemporaryFile(delete=False, suffix=f".{uploaded_file.name.split('.')[-1]}") as tmp_file:
-                            tmp_file.write(uploaded_file.getvalue())
+                            tmp_file.write(data_bytes)
                             tmp_path = Path(tmp_file.name)
                         try:
                             # 使用按科目預測
@@ -173,6 +203,7 @@ def _prediction_page():
                             # 顯示總覽表格
                             st.subheader(get_text(lang, 'overview'))
                             st.dataframe(results_df, width='stretch', height=400)
+                            # 簡單視覺化：每位學生預測平均分
                             st.markdown("---")
                             # 顯示每個學生的詳細預測結果（按科目）
                             st.subheader(get_text(lang, 'details'))

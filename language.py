@@ -86,6 +86,18 @@ LANGUAGES = {
         'error_train_command': '運行命令：`python train_model.py --target {target_lower}`',
         'error_no_file': '👆 請在左側上傳 eClass 數據文件開始預測',
         'error_prediction': '❌ 預測過程中發生錯誤：{error}',
+        # 上傳數據檢查
+        'data_check_title': '數據檢查',
+        'data_check_preview': '以下為數據前幾行（供快速檢查）：',
+        'data_check_shape': '行數：{rows}，欄數：{cols}',
+        'data_check_ok': '✅ 數值檢查通過（0–100 範圍內）。',
+        'data_check_no_numeric': '未找到數值欄位，請確認成績欄為數字。',
+        'data_check_out_of_range': '⚠️ 發現 {invalid}/{total} 個成績不在 0–100 範圍內，請檢查原始檔。',
+        'data_check_error': '無法預覽或檢查數據：{error}',
+        # 視覺化
+        'viz_overview_title': '📊 預測成績概覽',
+        'viz_student_label': '學生',
+        'viz_score_label': '{target} 預測平均分',
         
         'tab_predict': '預測',
         'tab_train': '訓練模型',
@@ -215,6 +227,18 @@ LANGUAGES = {
         'error_train_command': 'Run command: `python train_model.py --target {target_lower}`',
         'error_no_file': '👆 Please upload eClass data file on the left to start prediction',
         'error_prediction': '❌ Error occurred during prediction: {error}',
+        # Data check
+        'data_check_title': 'Data check',
+        'data_check_preview': 'Preview of the first few rows:',
+        'data_check_shape': 'Rows: {rows}, Columns: {cols}',
+        'data_check_ok': '✅ Numeric values look OK (within 0–100).',
+        'data_check_no_numeric': 'No numeric columns detected. Please ensure score columns are numeric.',
+        'data_check_out_of_range': '⚠️ Found {invalid}/{total} values outside 0–100. Please check the source file.',
+        'data_check_error': 'Could not preview or check data: {error}',
+        # Visualization
+        'viz_overview_title': '📊 Predicted results overview',
+        'viz_student_label': 'Student',
+        'viz_score_label': 'Predicted {target} score (mean)',
         
         'tab_predict': 'Prediction',
         'tab_train': 'Train Model',

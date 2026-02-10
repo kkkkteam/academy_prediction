@@ -39,7 +39,11 @@ for subject in subjects:
 
 # 創建數據字典
 # 第一列是 UserLogin（學生ID），用於匹配 HKDSE/IB 結果
-sample_data = {'UserLogin': students}
+# 加入 Grade 欄位示範年級標識（例如 S5）
+sample_data = {
+    'UserLogin': students,
+    'Grade': ['S5'] * len(students),
+}
 
 # 為每個科目生成3個Term的成績
 for subject in subjects:

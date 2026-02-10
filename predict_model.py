@@ -343,6 +343,14 @@ class PredictionModel:
         self.model = None
         self.preprocessor = DataPreprocessor()
         self.feature_columns = None
+
+    def _detect_grade_from_filename(self, file_path: Path) -> str:
+        """從 eClass 檔名推斷年級標識（s3/s4/s5/s6/mock），若找不到則回傳空字串"""
+        name = file_path.name.lower()
+        for g in ['s3', 's4', 's5', 's6', 'mock']:
+            if g in name:
+                return g
+        return ''
         
     def prepare_training_data(self, data_dir: Path) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """準備訓練數據"""
@@ -358,6 +366,17 @@ class PredictionModel:
             eclass_df = self.preprocessor.load_eclass_data(file_path)
             features = self.preprocessor.extract_features(eclass_df)
             if not features.empty:
+                # 根據檔名加上年級指標特徵（S3/S4/S5/S6/MOCK）
+                grade_key = self._detect_grade_from_filename(file_path)
+                grade_cols = ['s3', 's4', 's5', 's6', 'mock']
+                for g in grade_cols:
+                    col_name = f'is_{g}'
+                    if grade_key:
+                        # 只有對應年級為 1，其餘為 0
+                        features[col_name] = 1.0 if g == grade_key else 0.0
+                    else:
+                        # 檔名沒有年級資訊時，全部設為 0
+                        features[col_name] = 0.0
                 all_eclass_features.append(features)
         
         if not all_eclass_features:
@@ -644,6 +663,17 @@ class PredictionModel:
         
         if features.empty:
             raise ValueError("無法從 eClass 數據中提取特徵")
+
+        # 與訓練時一致：根據檔名加上年級指標特徵
+        grade_key = self._detect_grade_from_filename(eclass_file)
+        grade_cols = ['s3', 's4', 's5', 's6', 'mock']
+        for g in grade_cols:
+            col_name = f'is_{g}'
+            if col_name not in features.columns:
+                if grade_key:
+                    features[col_name] = 1.0 if g == grade_key else 0.0
+                else:
+                    features[col_name] = 0.0
         
         # 確保特徵列匹配
         for col in self.feature_columns:
