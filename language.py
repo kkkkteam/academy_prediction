@@ -142,7 +142,8 @@ LANGUAGES = {
         'train_error_missing': '請上傳所需檔案：訓練 {target} 需要 eClass 數據與對應的成績結果檔。',
         'train_error_failed': '訓練失敗：{error}',
         
-        'footer': '學生成績預測系統 v1.0 | 基於機器學習模型'
+        'footer': '學生成績預測系統 v1.0 | 基於機器學習模型',
+        'footer_copyright': '© Inflow Technology Limited'
     },
     'en': {
         'nav_score_prediction': 'Score Prediction',
@@ -283,7 +284,8 @@ LANGUAGES = {
         'train_error_missing': 'Please upload required files: training {target} needs eClass data and the corresponding result file(s).',
         'train_error_failed': 'Training failed: {error}',
         
-        'footer': 'Student Performance Prediction System v1.0 | Based on Machine Learning Model'
+        'footer': 'Student Performance Prediction System v1.0 | Based on Machine Learning Model',
+        'footer_copyright': '© Inflow Technology Limited'
     }
 }
 

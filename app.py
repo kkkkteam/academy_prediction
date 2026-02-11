@@ -300,6 +300,7 @@ def _prediction_page():
     st.markdown(f"""
 <div style='text-align: center; color: gray;'>
     <p>{get_text(lang, 'footer')}</p>
+    <p style='font-size: 0.9em; margin-top: 0.25rem;'>{get_text(lang, 'footer_copyright')}</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -307,5 +308,5 @@ def _prediction_page():
 # 自訂側邊欄頁面名稱（依目前語言只顯示一種）並啟動多頁導航
 _nav_lang = st.session_state.get("language", "zh")
 _pred_page = st.Page(_prediction_page, title=get_text(_nav_lang, "nav_score_prediction"), icon="📊", default=True)
-_train_page = st.Page("pages/model_trainning.py", title=get_text(_nav_lang, "nav_train_model"), icon="🔧")
-st.navigation([_pred_page, _train_page]).run()
+# Train Model page hidden from navigation (still available at pages/model_trainning.py if needed)
+st.navigation([_pred_page]).run()
